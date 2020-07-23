@@ -4,15 +4,23 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstring>
 using namespace std;
 
 // Get all texinfo and link them by flag
 //
 
-int main () {
-    ifstream file("test.bsp", ios::binary);
+int main(int argc, char **argv) {
+    if (argc <= 1){
+        cout << "You must specify the location of the BSP file !" << endl;
+        return 0;
+    }
+
+    char* fileName = argv[1];
+    ifstream file(fileName, ios::binary);
 
     if (file.is_open()){
+        cout << "Starting obfuscation... (" << fileName << ")" << endl;
 
         // Ignore the first two variables of the BSP file header
         file.seekg(sizeof(int), ios::cur); // ident
@@ -31,7 +39,7 @@ int main () {
         char* buffer = new char[size];
         file.read(buffer, size);
 
-        ofstream out("new_bsp.bsp", ios::binary);
+        ofstream out(strcat(fileName, ".obfuscated"), ios::binary);
         out.write(buffer, size); // Copy the whole file
 
         out.seekp(lumpOffset, ios::beg);
@@ -49,8 +57,10 @@ int main () {
         delete[] buffer;
         out.close();
         file.close();
+
+        cout << "Done !" << endl;
     }else{
-        cout << "Failed to open the file !" << endl;
+        cout << "Failed to open the file ! (" << fileName << ")" << endl;
     }
 
     return 0;
