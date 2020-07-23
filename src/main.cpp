@@ -31,14 +31,11 @@ int main(int argc, char **argv) {
         lump_t brushsideLump = bsp.getHeader().lumps[LUMP_BRUSHSIDES_INDEX];
 
         out.seekp(brushsideLump.fileofs);
-        short firstIndex(0); // The index 0 generally corresponds to the nodraw texture
         for (int i = 0; i < brushsideLump.filelen/sizeof(dbrushside_t); i++){
-            out.seekp(sizeof(short), ios::cur); // ignore planenum
+            dbrushside_t brushside = bsp.getBrushSides()[i];
+            brushside.texinfo = 0;
 
-            out.write(reinterpret_cast<char*>(&firstIndex), sizeof(short)); // texinfo
-
-            out.seekp(sizeof(short), ios::cur); // ignore dispinfo
-            out.seekp(sizeof(short), ios::cur); // ignore bevel
+            out.write(reinterpret_cast<char*>(&brushside), sizeof(dbrushside_t));
         }
 
         // Free memory
