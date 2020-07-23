@@ -1,14 +1,13 @@
-#define LUMP_SIZE 16
-#define BRUSHSIDE_SIZE 8
-#define BRUSHSIDE_LUMP_INDEX 19
-
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include "BSPFile.h"
+
 using namespace std;
 
 // Get all texinfo and link them by flag
 //
+
 
 int main(int argc, char **argv) {
     if (argc <= 1){
@@ -22,29 +21,18 @@ int main(int argc, char **argv) {
     if (file.is_open()){
         cout << "Starting obfuscation... (" << fileName << ")" << endl;
 
-        // Ignore the first two variables of the BSP file header
-        file.seekg(sizeof(int), ios::cur); // ident
-        file.seekg(sizeof(int), ios::cur); // version
-
-        file.seekg(LUMP_SIZE * BRUSHSIDE_LUMP_INDEX, ios::cur);
-
-        int lumpOffset, lumpLen;
-        file.read(reinterpret_cast<char*>(&lumpOffset), sizeof(int));
-        file.read(reinterpret_cast<char*>(&lumpLen), sizeof(int));
-
-        // Put the file data into a buffer
-        file.seekg(0, ios::end);
-        streampos size = file.tellg();
-        file.seekg(0, ios::beg);
-        char* buffer = new char[size];
-        file.read(buffer, size);
-
+        BSPFile bsp;
+        bsp.load(file);
+        
         ofstream out(strcat(fileName, ".obfuscated"), ios::binary);
-        out.write(buffer, size); // Copy the whole file
+        file.seekg(0);
+        out << file.rdbuf();
 
-        out.seekp(lumpOffset, ios::beg);
+        lump_t brushsideLump = bsp.getHeader().lumps[LUMP_BRUSHSIDES_INDEX];
+
+        out.seekp(brushsideLump.fileofs);
         short firstIndex(0); // The index 0 generally corresponds to the nodraw texture
-        for (int i = 0; i < lumpLen/BRUSHSIDE_SIZE; i++){
+        for (int i = 0; i < brushsideLump.filelen/sizeof(dbrushside_t); i++){
             out.seekp(sizeof(short), ios::cur); // ignore planenum
 
             out.write(reinterpret_cast<char*>(&firstIndex), sizeof(short)); // texinfo
@@ -54,7 +42,6 @@ int main(int argc, char **argv) {
         }
 
         // Free memory
-        delete[] buffer;
         out.close();
         file.close();
 
