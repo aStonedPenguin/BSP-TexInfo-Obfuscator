@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
 }
 
 void obfuscateFlags(BSPFile* bsp, ofstream& out){
-    vector<dbrushside_t> brushSides = bsp->getBrushSides();
-    vector<texinfo_t> texInfos = bsp->getTexInfos();
+    vector<dbrushside_t> brushSides = bsp->getBrushSide();
+    vector<texinfo_t> texInfos = bsp->getTexInfo();
 
     // Get all different surface flags and and pick a corresponding texinfo
     map<int, int> texByFlags;
@@ -90,11 +90,34 @@ void obfuscateFlags(BSPFile* bsp, ofstream& out){
 }
 
 void obfuscateNoDraw(BSPFile* bsp, ofstream& out){
-    vector<dbrushside_t> brushSides = bsp->getBrushSides();
+    vector<dbrushside_t> brushSide = bsp->getBrushSide();
+    vector<string> texDataStringData = bsp->getTexDataStringData();
+
+    for(int i = 0; i < texDataStringData.size(); i++)
+        cout << i << ": " << texDataStringData[i] << endl; 
+
+    unsigned int sel;
+    do{
+        cout << "Choose a valid texture: ";
+        cin >> sel;
+    }while(sel >= texDataStringData.size());
+
+    // Find a texinfo that have this texture
+    vector<texinfo_t> texinfos = bsp->getTexInfo();
+    vector<dtexdata_t> texdatas = bsp->getTexData();
+    int texIndex;
+    for(int i = 0; i < texdatas.size(); i++){
+        texinfo_t tex = texinfos[i];
+        dtexdata_t data = texdatas[tex.texdata];
+        if(data.nameStringTableID == sel){
+            texIndex = i;
+            break;
+        }
+    }
 
     out.seekp(bsp->getHeader().lumps[LUMP_BRUSHSIDES_INDEX].fileofs);
-    for(auto &side : brushSides){
-        side.texinfo = 0; // The index 0 normally correspond to the nodraw texture.
+    for(auto &side : brushSide){
+        side.texinfo = texIndex;
         out.write(reinterpret_cast<char*>(&side), sizeof(dbrushside_t));
     }
 } 
