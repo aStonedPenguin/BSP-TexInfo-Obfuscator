@@ -10,13 +10,25 @@
 
 using namespace std;
 
+void obfuscateFlags(BSPFile* bsp, ofstream& out);
+void obfuscateNoDraw(BSPFile* bsp, ofstream& out);
+
 int main(int argc, char **argv) {
-    if (argc <= 1){
-        cout << "You must specify the location of the BSP file !" << endl;
+    if (argc <= 2){
+        cout << "Incorrect usage: You must specify an obfuscation method and the location of a BSP file !" << endl;
+        cout << "Usage: " << endl;
+        cout << "\t" << argv[0] << " -flags <file>" << endl;
+        cout << "\t" << argv[0] << " -nodraw <file>" << endl;
         return 0;
     }
 
-    char* fileName = argv[1];
+    char* method = argv[1];
+    if(strcmp(method, "-flags")  != 0 && strcmp(method, "-nodraw") != 0){
+        cerr << "You specified an invalid method !" << endl;
+        return 0;
+    }
+
+    char* fileName = argv[2];
     ifstream file(fileName, ios::binary);
 
     if (file.is_open()){
@@ -31,14 +43,6 @@ int main(int argc, char **argv) {
             return 0;
         }
 
-        vector<dbrushside_t> brushSides = bsp->getBrushSides();
-        vector<texinfo_t> texInfos = bsp->getTexInfos();
-
-        // Get all different surface flags and and pick a corresponding texinfo
-        map<int, int> texByFlags;
-        for(auto &side : brushSides)
-            texByFlags[texInfos[side.texinfo].flags] = side.texinfo;
-
         // Copy the file
         ofstream out(strcat(fileName, ".obfuscated"), ios::binary);
         if (!out.is_open()){
@@ -48,14 +52,11 @@ int main(int argc, char **argv) {
         file.seekg(0);
         out << file.rdbuf();
 
-        // Write the new texinfos on the brushside lump
-        out.seekp(bsp->getHeader().lumps[LUMP_BRUSHSIDES_INDEX].fileofs);
-        for(auto &side : brushSides){
-            texinfo_t& texInfo = texInfos[side.texinfo];
-            side.texinfo = texByFlags[texInfo.flags];
-
-            out.write(reinterpret_cast<char*>(&side), sizeof(dbrushside_t));
-        }
+        // Obfuscate
+        if (strcmp(method, "-flags") == 0)
+            obfuscateFlags(bsp, out);
+        else
+            obfuscateNoDraw(bsp, out);
 
         // Close the streams
         delete bsp;
@@ -69,3 +70,31 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+void obfuscateFlags(BSPFile* bsp, ofstream& out){
+    vector<dbrushside_t> brushSides = bsp->getBrushSides();
+    vector<texinfo_t> texInfos = bsp->getTexInfos();
+
+    // Get all different surface flags and and pick a corresponding texinfo
+    map<int, int> texByFlags;
+    for(auto &side : brushSides)
+        texByFlags[texInfos[side.texinfo].flags] = side.texinfo;
+
+    out.seekp(bsp->getHeader().lumps[LUMP_BRUSHSIDES_INDEX].fileofs);
+    for(auto &side : brushSides){
+        texinfo_t& texInfo = texInfos[side.texinfo];
+        side.texinfo = texByFlags[texInfo.flags]; // Write the new texinfos on the brushside lump
+
+        out.write(reinterpret_cast<char*>(&side), sizeof(dbrushside_t));
+    }
+}
+
+void obfuscateNoDraw(BSPFile* bsp, ofstream& out){
+    vector<dbrushside_t> brushSides = bsp->getBrushSides();
+
+    out.seekp(bsp->getHeader().lumps[LUMP_BRUSHSIDES_INDEX].fileofs);
+    for(auto &side : brushSides){
+        side.texinfo = 0; // The index 0 normally correspond to the nodraw texture.
+        out.write(reinterpret_cast<char*>(&side), sizeof(dbrushside_t));
+    }
+} 
