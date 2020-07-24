@@ -19,9 +19,16 @@ int main(int argc, char **argv) {
         cout << "Starting obfuscation... (" << fileName << ")" << endl;
 
         // Read the BSP file
-        BSPFile bsp(file);
-        vector<dbrushside_t> brushSides = bsp.getBrushSides();
-        vector<texinfo_t> texInfos = bsp.getTexInfos();
+        BSPFile* bsp;
+        try{
+            bsp = new BSPFile(file);
+        }catch(std::bad_alloc& e){
+            cerr << "Failed to read the file, is this a valid BSP file ?" << endl;
+            return 0;
+        }
+
+        vector<dbrushside_t> brushSides = bsp->getBrushSides();
+        vector<texinfo_t> texInfos = bsp->getTexInfos();
 
         // Get all different surface flags and and pick a corresponding texinfo
         map<int, int> texByFlags;
@@ -38,7 +45,7 @@ int main(int argc, char **argv) {
         out << file.rdbuf();
 
         // Write the new texinfos on the brushside lump
-        out.seekp(bsp.getHeader().lumps[LUMP_BRUSHSIDES_INDEX].fileofs);
+        out.seekp(bsp->getHeader().lumps[LUMP_BRUSHSIDES_INDEX].fileofs);
         for(auto &side : brushSides){
             texinfo_t& texInfo = texInfos[side.texinfo];
             side.texinfo = texByFlags[texInfo.flags];
@@ -47,6 +54,7 @@ int main(int argc, char **argv) {
         }
 
         // Close the streams
+        delete bsp;
         out.close();
         file.close();
 

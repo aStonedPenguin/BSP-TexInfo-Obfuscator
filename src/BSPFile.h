@@ -21,7 +21,7 @@ struct dheader_t{
     int	mapRevision;            // the map's revision (iteration, version) number
 };
 
-// Lump specifics structs
+// Lump specific structs
 struct texinfo_t{
 	float textureVecs[2][4];	// [s/t][xyz offset]
 	float lightmapVecs[2][4];	// [s/t][xyz offset] - length is in units of texels/area
