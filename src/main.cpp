@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <map>
 #include "BSPFile.h"
 
 using namespace std;
@@ -21,24 +22,30 @@ int main(int argc, char **argv) {
     if (file.is_open()){
         cout << "Starting obfuscation... (" << fileName << ")" << endl;
 
-        BSPFile bsp;
-        bsp.load(file);
-        
-        ofstream out(strcat(fileName, ".obfuscated"), ios::binary);
-        file.seekg(0);
-        out << file.rdbuf();
+        BSPFile bsp(file);
+        vector<dbrushside_t> brushSides = bsp.getBrushSides();
+        vector<texinfo_t> texInfos = bsp.getTexInfos();
 
-        lump_t brushsideLump = bsp.getHeader().lumps[LUMP_BRUSHSIDES_INDEX];
-
-        out.seekp(brushsideLump.fileofs);
-        for (int i = 0; i < brushsideLump.filelen/sizeof(dbrushside_t); i++){
-            dbrushside_t brushside = bsp.getBrushSides()[i];
-            brushside.texinfo = 0;
-
-            out.write(reinterpret_cast<char*>(&brushside), sizeof(dbrushside_t));
+        map<int, int> texInfosByFlag;
+        for(auto &side : brushSides){
+            int texInfo = side.texinfo;
+            texInfosByFlag[texInfos[texInfo].flags] = texInfo;
         }
 
-        // Free memory
+        // Copy the file
+        ofstream out(strcat(fileName, ".obfuscated"), ios::binary);
+        out << file.rdbuf();
+
+        lump_t brushsideHeader = bsp.getHeader().lumps[LUMP_BRUSHSIDES_INDEX];
+
+        out.seekp(brushsideHeader.fileofs);
+        for(auto side : brushSides){
+            texinfo_t texInfo = texInfos[side.texinfo];
+            side.texinfo = texInfosByFlag[texInfo.flags];
+
+            out.write(reinterpret_cast<char*>(&side), sizeof(dbrushside_t));
+        }
+
         out.close();
         file.close();
 
