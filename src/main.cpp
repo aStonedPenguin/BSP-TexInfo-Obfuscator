@@ -106,7 +106,7 @@ void obfuscateNoDraw(BSPFile* bsp, ofstream& out){
     vector<texinfo_t> texinfos = bsp->getTexInfo();
     vector<dtexdata_t> texdatas = bsp->getTexData();
     int texIndex;
-    for(int i = 0; i < texdatas.size(); i++){
+    for(int i = 0; i < texinfos.size(); i++){
         texinfo_t tex = texinfos[i];
         dtexdata_t data = texdatas[tex.texdata];
         if(data.nameStringTableID == sel){
