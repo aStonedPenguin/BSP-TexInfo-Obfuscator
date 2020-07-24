@@ -6,10 +6,6 @@
 
 using namespace std;
 
-// Get all texinfo and link them by flag
-//
-
-
 int main(int argc, char **argv) {
     if (argc <= 1){
         cout << "You must specify the location of the BSP file !" << endl;
@@ -22,36 +18,41 @@ int main(int argc, char **argv) {
     if (file.is_open()){
         cout << "Starting obfuscation... (" << fileName << ")" << endl;
 
+        // Read the BSP file
         BSPFile bsp(file);
         vector<dbrushside_t> brushSides = bsp.getBrushSides();
         vector<texinfo_t> texInfos = bsp.getTexInfos();
 
-        map<int, int> texInfosByFlag;
-        for(auto &side : brushSides){
-            int texInfo = side.texinfo;
-            texInfosByFlag[texInfos[texInfo].flags] = texInfo;
-        }
+        // Get all different surface flags and and pick a corresponding texinfo
+        map<int, int> texByFlags;
+        for(auto &side : brushSides)
+            texByFlags[texInfos[side.texinfo].flags] = side.texinfo;
 
         // Copy the file
         ofstream out(strcat(fileName, ".obfuscated"), ios::binary);
+        if (!out.is_open()){
+            cerr << "Failed to create a new file" << endl;
+            return 0;
+        }
+        file.seekg(0);
         out << file.rdbuf();
 
-        lump_t brushsideHeader = bsp.getHeader().lumps[LUMP_BRUSHSIDES_INDEX];
-
-        out.seekp(brushsideHeader.fileofs);
-        for(auto side : brushSides){
-            texinfo_t texInfo = texInfos[side.texinfo];
-            side.texinfo = texInfosByFlag[texInfo.flags];
+        // Write the new texinfos on the brushside lump
+        out.seekp(bsp.getHeader().lumps[LUMP_BRUSHSIDES_INDEX].fileofs);
+        for(auto &side : brushSides){
+            texinfo_t& texInfo = texInfos[side.texinfo];
+            side.texinfo = texByFlags[texInfo.flags];
 
             out.write(reinterpret_cast<char*>(&side), sizeof(dbrushside_t));
         }
 
+        // Close the streams
         out.close();
         file.close();
 
         cout << "Done !" << endl;
     }else{
-        cout << "Failed to open the file ! (" << fileName << ")" << endl;
+        cerr << "Failed to open the file ! (" << fileName << ")" << endl;
     }
 
     return 0;

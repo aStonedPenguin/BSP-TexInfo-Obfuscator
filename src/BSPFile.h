@@ -36,9 +36,10 @@ struct dbrushside_t{
 	short bevel;		        // is the side a bevel plane?
 };
 
+// Class used to parse a Source BSP file from Valve 
 class BSPFile{
     public:
-        // Getters
+        // Getters (Don't give a reference)
         std::vector<texinfo_t> getTexInfos() const{
             return texInfos;
         };
