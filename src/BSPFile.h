@@ -1,3 +1,10 @@
+/*
+    Created by Feeps on 24/07/2020.
+
+    Some structures of this file come from Source SDK Source Code
+    https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspfile.h
+*/
+
 #define HEADER_LUMPS 64
 #define LUMP_BRUSHSIDES_INDEX 19
 #define LUMP_TEXINFO_INDEX 6
