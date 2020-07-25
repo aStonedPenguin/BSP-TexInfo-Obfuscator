@@ -19,6 +19,8 @@ int main(int argc, char **argv) {
         cout << "Usage: " << endl;
         cout << "\t" << argv[0] << " -flags <file>" << endl;
         cout << "\t" << argv[0] << " -nodraw <file>" << endl;
+        cout << endl << "Open the program in a console if you have not done so." << endl;
+        getchar(); // Don't close the console directly
         return 0;
     }
 
