@@ -5,6 +5,8 @@ Both have unfortunately their __limitations__.
 
 ## Flags method
 This method has as a goal to keep the same Surface Flags that the original map. (Best choice if we don't want to broke any game features)
+
+__Limitations:__
 1. Only one different "[$surfaceprop](https://developer.valvesoftware.com/wiki/$surfaceprop)" per SurfaceFlags (When choosing the texture). Still better than the NoDraw method.
 2. The obfuscation is less disturbing.
     
@@ -13,7 +15,8 @@ This method has as a goal to keep the same Surface Flags that the original map. 
     
 ## NoDraw method
 It doesn't keep the Surface Flags but give you the choice of the texture which will fill the whole map.
-Limitations:
+
+__Limitations:__
 1. No Skybox support (SurfaceFlags are not kept).
 2. Only one "[$surfaceprop](https://developer.valvesoftware.com/wiki/$surfaceprop)" for the whole map. (But can technically be chosen when choosing our texture).
 
